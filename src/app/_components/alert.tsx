@@ -1,6 +1,7 @@
+"use client";
 import Container from "@/app/_components/container";
-import { EXAMPLE_PATH } from "@/lib/constants";
 import cn from "classnames";
+import RainbowLink from "./rainbow-link";
 
 type Props = {
   preview?: boolean;
@@ -29,14 +30,7 @@ const Alert = ({ preview }: Props) => {
             </>
           ) : (
             <>
-              The source code for this blog is{" "}
-              <a
-                href={`https://github.com/vercel/next.js/tree/canary/examples/${EXAMPLE_PATH}`}
-                className="underline hover:text-blue-600 duration-200 transition-colors"
-              >
-                available on GitHub
-              </a>
-              .
+              <RainbowLink text="Go Back to the main page" link="/" />
             </>
           )}
         </div>
