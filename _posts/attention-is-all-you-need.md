@@ -60,7 +60,7 @@ Pour un **modèle de langage**, cela signifie que ces mots, bien qu’identiques
 L'attention, c'est la capacité d'un modèle à relier n'importe quel mot à n'importe quel autre dans une phrase, quelle que soit la distance qui les sépare. C'est ce mécanisme qui permet au modèle de **comprendre** que dans 'Le chat dort', c'est bien le **chat** qui **dort**, et pas autre chose.<br/>
 Comment ? En traduisant ces relations en nombres, mais nous y reviendrons.
 
-Ce mécanisme est au cœur de l'architecture dite des **Transformers**, décrite dans un papier fondateur de Vaswani et al. (2017), celui-là même qui donne son titre à cet article.
+Ce mécanisme est au cœur de l'architecture dite des **Transformers**, décrite dans un papier fondateur de Vaswani et al. (2017) [^1], celui-là même qui donne son titre à cet article.
 
 Regardons comment ça se passe…
 
@@ -134,7 +134,7 @@ Ce n'est pas une métaphore. C'est une opération arithmétique réelle, effectu
 
 C'est cette géométrie qui donne au modèle sa puissance. Les **concepts** ne sont pas stockés dans une table, ils sont **encodés** dans la **structure même de l'espace**. Et cet espace ne se limite pas à des relations simples comme le genre : on y retrouve des directions pour le temps (présent → passé), la géographie (pays → capitale), et bien d'autres relations que le modèle a extraites de ses données d'entraînement.
 
-Le modèle est alors en mesure de **généraliser**.<br/>
+Le modèle est alors en mesure de **généraliser [^2]**.<br/>
 Si on lui pose la question “La reine est au roi ce que la femme est à ?”, il répondra, “l'homme”. Et il saura identifier par une direction similaire oncle/tante, neveu/niece, père/mère.
 
 Non pas parce qu'il a mémorisé ces associations, mais parce qu'il a capturé, dans la géométrie de son espace vectoriel, la structure abstraite de la relation entre ces mots.
@@ -151,7 +151,7 @@ C’est en fait la partie qui nous intéresse le plus car c’est en fait ce que
 Après avoir traversé toutes les couches d'attention, le **dernier mot** de la séquence porte en lui une **représentation** riche de **tout le contexte**. Ce **vecteur** est comme une **flèche** qui pointe dans une **direction précise** de l'espace.
 
 Le modèle compare alors ce vecteur avec ceux de tous les mots de son vocabulaire, des **dizaines de milliers de mots**.<br/>
-Plus un mot du vocabulaire est "aligné" avec le vecteur de sortie, plus il a de chances d'être choisi comme mot suivant.
+Plus un mot du vocabulaire est "aligné" avec le vecteur de sortie, plus il a de chances d'être choisi comme mot suivant **[^3]**.
 
 C'est pour cela que les réponses sont souvent **si pertinentes**. Le modèle ne **pioche pas** un mot au **hasard** parmi une liste de **mots fréquents**. Il choisit **celui** dont la **position** dans l'espace **correspond le mieux** à tout ce que les **couches d'attention** ont **construit**, le **sens** de la phrase, les **relations** entre les mots, le **contexte global**.
 
@@ -165,3 +165,9 @@ C'est ainsi que fonctionne, **en substance**, la “magie” de nos LLM. Pas de 
 Maintenant que nous avons une vision claire de ce qui se passe à l'intérieur, je vous propose de nous retrouver pour un prochain article où on s'intéressera à la façon dont on peut amener ces modèles à raisonner, avec des techniques comme le **Chain of Thought**.
 
 Nous aborderons par la suite des sujets comme le prompt engineering, les agents autonomes ou encore le MCP, autant de **concepts** qui **transforment** déjà **concrètement** notre **façon de développer**.
+
+[^1]: (1) Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). "Attention Is All You Need." Advances in Neural Information Processing Systems, 30 (NeurIPS 2017). https://arxiv.org/abs/1706.03762
+
+[^2]: (2) Capacité d’un modèle d’apprentissage automatique à produire des prédictions correctes sur des données qu’il n’a jamais vues, en capturant des régularités ou des structures sous-jacentes plutôt qu’en se contentant de mémoriser les exemples d’entraînement. Pour des informations plus approfondies sur la généralisation dans l'apprentissage automatique, vous pouvez vous référer à des manuels comme « Deep Learning » (https://www.deeplearningbook.org/) d'I. Goodfellow et Y. Bengio.
+
+[^3]: (3) Techniquement, le modèle calcule un produit scalaire entre le vecteur de sortie et le vecteur de chaque mot du vocabulaire, puis convertit ces scores en probabilités. Pour une description détaillée de ce mécanisme, voir Jay Alammar, "The Illustrated Transformer" (https://jalammar.github.io/illustrated-transformer/).
