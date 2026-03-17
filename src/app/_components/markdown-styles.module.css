@@ -16,3 +16,24 @@
 .markdown h3 {
   @apply text-2xl mt-8 mb-4 leading-snug;
 }
+
+.markdown code {
+  @apply bg-gray-200 text-gray-800 font-mono px-1.5 py-0.5 rounded;
+}
+
+.markdown a:not([data-footnote-ref]):not([data-footnote-backref]) {
+  @apply text-blue-600 underline underline-offset-2 hover:text-blue-800;
+}
+
+.markdown :global(.footnotes) {
+  @apply text-sm mt-12;
+}
+
+.markdown :global(.footnotes)::before {
+  content: "";
+  @apply block w-1/4 border-t border-gray-400 mb-6;
+}
+
+.markdown :global(.footnotes) h2 {
+  @apply hidden;
+}

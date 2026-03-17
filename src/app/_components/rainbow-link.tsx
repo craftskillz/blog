@@ -28,7 +28,8 @@ const RainbowLink = ({
       target={target ? target : "_self"}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="inline-flex"
+      className="inline-flex no-underline"
+      style={{ textDecoration: "none" }}
     >
       {letters.map((l, i) => (
         <span

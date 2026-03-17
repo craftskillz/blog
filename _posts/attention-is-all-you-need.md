@@ -6,7 +6,7 @@ coverImage: "/assets/blog/attention-is-all-you-need/attention_cover.jpg"
 date: "2026-03-17T10:35:07.322Z"
 author:
   name: Y. Medaghri-Alaoui
-  picture: "/assets/blog/authors/jj.jpeg"
+  picture: "/assets/blog/authors/yma.png"
 ogImage:
   url: "/assets/blog/attention-is-all-you-need/attention_cover.jpg"
 ---
@@ -45,7 +45,7 @@ _Le chat, que la souris, que le chien poursuit, regarde, dort._
 
 Bon d'accord, c'est pas super comme formulation je vous l’accorde, et je ne suis **pas forcément sûr** que mon placement de virgules soit **parfaitement académique** mais pourtant là on comprend le sens : un chien poursuit une souris, qui elle-même regarde un chat, qui lui est en train de dormir.
 
-![Le chat, la souris et le chien](/assets/blog/attention-is-all-you-need/dog_mouse_cat.png)
+![Le chat, la souris et le chien](/assets/blog/attention-is-all-you-need/dog_mouse_cat.jpg)
 
 Pourquoi j'ai pris cet exemple un peu tordu ? C'est seulement pour vous faire toucher du doigt **l'influence** de **certains mots** par rapport à **d'autres** dans une **phrase**.<br/>
 C'est volontairement poussé à l'extrême pour que vous puissiez justement **_sentir_** cette influence et comprendre par analogie comment cette influence est **déterminée** en **traversant des couches du modèle d’IA**, comme nous avons ajouté des virgules et **traversé** nos **propres couches** de **compréhension**.
@@ -130,7 +130,7 @@ Autrement dit : roi − homme + femme ≈ reine
 
 Ce n'est pas une métaphore. C'est une opération arithmétique réelle, effectuée sur les nombres qui représentent ces mots. Le modèle **a découvert**, tout **seul**, que la relation "masculin → féminin" peut s'exprimer comme **une direction** dans **l'espace**.
 
-![Vecteurs encodent des relations](/assets/blog/attention-is-all-you-need/vecteurs_roi_reine_3d.png)
+![Vecteurs encodent des relations](/assets/blog/attention-is-all-you-need/vecteurs_roi_reine_3d.jpg)
 
 C'est cette géométrie qui donne au modèle sa puissance. Les **concepts** ne sont pas stockés dans une table, ils sont **encodés** dans la **structure même de l'espace**. Et cet espace ne se limite pas à des relations simples comme le genre : on y retrouve des directions pour le temps (présent → passé), la géographie (pays → capitale), et bien d'autres relations que le modèle a extraites de ses données d'entraînement.
 
