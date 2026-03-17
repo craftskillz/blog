@@ -5,8 +5,7 @@ Sauf que quand on creuse un peu, les choses sont moins simples."
 coverImage: "/assets/blog/attention-is-all-you-need/attention_cover.jpg"
 date: "2026-03-17T10:35:07.322Z"
 author:
-  name: Y. Medaghri-Alaoui
-  picture: "/assets/blog/authors/yma.png"
+  picture: "/assets/blog/authors/yma_logo.png"
 ogImage:
   url: "/assets/blog/attention-is-all-you-need/attention_cover.jpg"
 ---

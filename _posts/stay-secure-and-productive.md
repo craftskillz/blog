@@ -4,8 +4,7 @@ excerpt: "Votre environnement de travail est ultra-sécurisé et bloque vos outi
 coverImage: "/assets/blog/stay-secure-and-productive/cover.jpg"
 date: "2026-01-01T11:42:06.163Z"
 author:
-  name: Y. Medaghri-Alaoui
-  picture: "/assets/blog/authors/yma.png"
+  picture: "/assets/blog/authors/yma_logo.png"
 ogImage:
   url: "/assets/blog/stay-secure-and-productive/cover.jpg"
 ---
