@@ -1,5 +1,5 @@
 ---
-title: "Restez en productifs et en sécurité avec vos propres outils autonomes"
+title: "Restez productifs et en sécurité avec vos propres outils autonomes"
 excerpt: "Votre environnement de travail est ultra-sécurisé et bloque vos outils habituels ? Vous pouvez facilement construire votre propre mini-dashboard de productivité, en utilisant l'IA, avec un simple fichier HTML, du JavaScript et du CSS, sans dépendance externe, sans CDN, et sans compromis sur la sécurité."
 coverImage: "/assets/blog/stay-secure-and-productive/cover.jpg"
 date: "2026-01-01T11:42:06.163Z"
