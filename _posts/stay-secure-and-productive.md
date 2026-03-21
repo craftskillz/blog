@@ -23,10 +23,13 @@ Une fois ce parti pris technique posé, du **HTML brut**, du **JavaScript** et d
 
 J'en ai justement **conçu une** que je mets à **votre disposition**. Le code est simple à comprendre et pourtant ses fonctionnalités sont cool et bien pratiques. D'ailleurs vous pouvez même **cliquer dessus** pour la **tester**.
 
-Elle est libre de droits et disponible sur mon dépôt Git : [github.com/ymedaghri/liens-utiles](https://github.com/ymedaghri/liens-utiles)
+Elle est libre de droits et disponible sur mon dépôt Git : <a href="https://github.com/ymedaghri/kit-doc-survie" target="_blank">github.com/ymedaghri/kit-doc-survie</a>
 
-<a href="/assets/blog/stay-secure-and-productive/demo.html" target="_blank">
-  <img src="/assets/blog/stay-secure-and-productive/mon_dashboard.jpg" alt="Mon mini dashboard" />
+Vous pouvez aussi l'installer sur votre ordinateur en tant qu'utilitaire via `npx kit-doc-survie`<br/>
+Plus d'infos sur <a href="https://www.npmjs.com/package/kit-doc-survie" target="_blank">www.npmjs.com/package/kit-doc-survie</a>
+
+<a href="/assets/blog/stay-secure-and-productive/index.html" target="_blank">
+  <img src="/assets/blog/stay-secure-and-productive/mon_dashboard.png" alt="Mon mini dashboard" />
 </a>
 
 [^1]: Le terme « Vanilla » (JavaScript ou CSS) signifie que l'on n'utilise aucune bibliothèque tierce, uniquement les fonctionnalités natives du langage, disponibles dans tous les navigateurs.
