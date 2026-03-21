@@ -1,6 +1,6 @@
 ---
 title: "Restez productifs et en sécurité avec vos propres outils autonomes"
-excerpt: "Votre environnement de travail est ultra-sécurisé et bloque vos outils habituels ? Vous pouvez facilement construire votre propre mini-dashboard de productivité, en utilisant l'IA, avec un simple fichier HTML, du JavaScript et du CSS, sans dépendance externe, sans CDN, et sans compromis sur la sécurité."
+excerpt: "Vous travaillez hors ligne ou dans une zone sans internet et vos outils habituels ne sont pas disponibles ? Vous pouvez facilement construire votre propre mini-dashboard de productivité, en utilisant l'IA, avec un simple fichier HTML, du JavaScript et du CSS, sans dépendance externe, sans CDN, et sans compromis sur la sécurité."
 coverImage: "/assets/blog/stay-secure-and-productive/cover.jpg"
 date: "2026-01-01T11:42:06.163Z"
 author:
@@ -9,11 +9,11 @@ ogImage:
   url: "/assets/blog/stay-secure-and-productive/cover.jpg"
 ---
 
-Il peut vous arriver de travailler dans des environnements **hautement sécurisés** et surtout **hautement contraignants** : pas d'accès à certains logiciels classiques de suivi des tâches, pas d'accès aux CDN standards, etc.
+Il peut vous arriver de travailler **hors ligne** ou dans certains environnements sans accès internet : pas d'accès à certains logiciels classiques de suivi des tâches, pas d'accès aux CDN standards, etc.
 
 Or, vous le savez par expérience : votre productivité est fortement liée à votre capacité à vous **libérer cognitivement** de certaines tâches en les consignant dans un outil de suivi, puis à les reprendre chaque matin en partant d'un **dashboard** qui en garde la trace.
 
-Pour répondre à ce problème tout en respectant les **exigences de sécurité** de votre environnement, une solution existe : construire votre propre outil en combinant HTML, JavaScript Vanilla[^1] et CSS Vanilla[^1].
+Pour répondre à ce problème tout en restant **totalement autonome**, une solution existe : construire votre propre outil en combinant HTML, JavaScript Vanilla[^1] et CSS Vanilla[^1].
 Concrètement, vous obtenez un simple **fichier HTML** que vous déposez sur votre bureau et qui, grâce au `localStorage` de votre navigateur, conserve vos données même après fermeture et réouverture de celui-ci.
 
 Aucune dépendance externe, aucun serveur, **aucune communication avec l'exterieur**, aucune faille dans le périmètre de sécurité tout se passe en local, pas besoin de serveur, de librairie, c'est un **fichier de votre bureau que vous ouvrez dans votre navigateur.**
