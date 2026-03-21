@@ -17,19 +17,8 @@ Pour répondre à ce problème tout en respectant les **exigences de sécurité*
 Concrètement, vous obtenez un simple **fichier HTML** que vous déposez sur votre bureau et qui, grâce au `localStorage` de votre navigateur, conserve vos données même après fermeture et réouverture de celui-ci.<br/>
 Aucune dépendance externe, aucun serveur, **aucune communication avec l'exterieur**, aucune faille dans le périmètre de sécurité tout se passe en local, pas besoin de serveur, de librairie, c'est un **fichier de votre bureau que vous ouvrez dans votre navigateur.**<br/>
 
+> [!INFO inline]
 > C'est comme si vous utilisiez un papier et un stylo avec votre propre bloc note, à part que là c'est avec des capacités du web, mais en local.
-
-> [!TIP]
-> Astuce utile pour les lecteurs.
-
-> [!WARNING]
-> Attention à ce point important.
-
-> [!INFO]
-> Information complémentaire.
-
-> [!IMPORTANT]
-> Point crucial à ne pas manquer.
 
 ## L'IA à la rescousse
 

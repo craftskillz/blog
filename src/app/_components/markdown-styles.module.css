@@ -29,6 +29,10 @@
   @apply text-blue-600 underline underline-offset-2 hover:text-blue-800;
 }
 
+.calloutBody p {
+  @apply my-1;
+}
+
 .markdown :global(.footnotes) {
   @apply text-sm mt-12;
 }
