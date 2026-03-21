@@ -35,7 +35,7 @@ var IDB_KEY_NOTES = "mesNotes";
 
 function ouvrirDBNotes() {
   return new Promise(function (resolve, reject) {
-    var req = indexedDB.open("kit-doc-survie-db", 1);
+    var req = indexedDB.open("doc-survival-kit-db", 1);
     req.onupgradeneeded = function (e) {
       e.target.result.createObjectStore("fileHandles");
     };

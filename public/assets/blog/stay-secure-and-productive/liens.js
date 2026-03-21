@@ -22,7 +22,7 @@ function checkDiff() {
 }
 
 // ── Persistance du FileSystemFileHandle via IndexedDB ────────────────
-const IDB_NAME = "kit-doc-survie-db";
+const IDB_NAME = "doc-survival-kit-db";
 const IDB_STORE = "fileHandles";
 const IDB_KEY = "mesLiens";
 

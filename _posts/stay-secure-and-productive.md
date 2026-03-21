@@ -23,10 +23,10 @@ Une fois ce parti pris technique posé, du **HTML brut**, du **JavaScript** et d
 
 J'en ai justement **conçu une** que je mets à **votre disposition**. Le code est simple à comprendre et pourtant ses fonctionnalités sont cool et bien pratiques. D'ailleurs vous pouvez même **cliquer dessus** pour la **tester**.
 
-Elle est libre de droits et disponible sur mon dépôt Git : <a href="https://github.com/ymedaghri/kit-doc-survie" target="_blank">github.com/ymedaghri/kit-doc-survie</a>
+Elle est libre de droits et disponible sur mon dépôt Git : <a href="https://github.com/ymedaghri/doc-survival-kit" target="_blank">github.com/ymedaghri/doc-survival-kit</a>
 
-Vous pouvez aussi l'installer sur votre ordinateur en tant qu'utilitaire via `npx kit-doc-survie`<br/>
-Plus d'infos sur <a href="https://www.npmjs.com/package/kit-doc-survie" target="_blank">www.npmjs.com/package/kit-doc-survie</a>
+Vous pouvez aussi l'installer sur votre ordinateur en tant qu'utilitaire via `npx doc-survival-kit`<br/>
+Plus d'infos sur <a href="https://www.npmjs.com/package/doc-survival-kit" target="_blank">www.npmjs.com/package/doc-survival-kit</a>
 
 <a href="/assets/blog/stay-secure-and-productive/index.html" target="_blank">
   <img src="/assets/blog/stay-secure-and-productive/mon_dashboard.png" alt="Mon mini dashboard" />
