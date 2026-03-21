@@ -12,6 +12,8 @@ ogImage:
 Il peut vous arriver de travailler **hors ligne** ou dans certains environnements sans accès internet : pas d'accès à certains logiciels classiques de suivi des tâches, pas d'accès aux CDN standards, etc.
 
 Or, vous le savez par expérience : votre productivité est fortement liée à votre capacité à vous **libérer cognitivement** de certaines tâches en les consignant dans un outil de suivi, puis à les reprendre chaque matin en partant d'un **dashboard** qui en garde la trace.
+<br/>
+Ou encore de prendre note sous forme de **diagramme** de certains process, flux, notions architecturales.
 
 Pour répondre à ce problème tout en restant **totalement autonome**, une solution existe : construire votre propre outil en combinant HTML, JavaScript Vanilla[^1] et CSS Vanilla[^1].
 Concrètement, vous obtenez un simple **fichier HTML** que vous déposez sur votre bureau et qui, grâce au `localStorage` de votre navigateur, conserve vos données même après fermeture et réouverture de celui-ci.
@@ -41,6 +43,9 @@ Plus d'infos sur <a href="https://www.npmjs.com/package/doc-survival-kit" target
 >
 > <a href="/assets/blog/stay-secure-and-productive/index.html" target="_blank">
 >   <img src="/assets/blog/stay-secure-and-productive/mon_dashboard.png" alt="Mon mini dashboard" />
+> </a>
+> <a href="/assets/blog/stay-secure-and-productive/index.html" target="_blank">
+>   <img src="/assets/blog/stay-secure-and-productive/mes_diagrammes.png" alt="Mes diagrammes" />
 > </a>
 
 [^1]: Le terme « Vanilla » (JavaScript ou CSS) signifie que l'on n'utilise aucune bibliothèque tierce, uniquement les fonctionnalités natives du langage, disponibles dans tous les navigateurs.
