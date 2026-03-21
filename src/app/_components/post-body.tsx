@@ -70,7 +70,7 @@ const parserOptions: HTMLReactParserOptions = {
         if (callout.inline) {
           return (
             <div className={`rounded-xl border px-4 py-2 my-3 flex items-start gap-2 ${bg} ${border}`}>
-              <span className={`mt-0.5 shrink-0 ${accent}`}><Icon /></span>
+              <span className={`mt-[6px] shrink-0 ${accent}`}><Icon /></span>
               <span className={`text-gray-800 ${markdownStyles["calloutBody"]}`}>{domToReact(firstParagraph.children as Parameters<typeof domToReact>[0], parserOptions)}</span>
             </div>
           );
