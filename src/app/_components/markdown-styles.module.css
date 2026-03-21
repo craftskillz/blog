@@ -17,6 +17,10 @@
   @apply text-2xl mt-8 mb-4 leading-snug;
 }
 
+.markdown blockquote {
+  @apply border-l-4 border-gray-400 pl-6 italic text-gray-600;
+}
+
 .markdown code {
   @apply bg-gray-200 text-gray-800 font-mono px-1.5 py-0.5 rounded;
 }

@@ -15,11 +15,27 @@ Or, vous le savez par expérience : votre productivité est fortement liée à v
 
 Pour répondre à ce problème tout en respectant les **exigences de sécurité** de votre environnement, une solution existe : construire votre propre outil en combinant HTML, JavaScript Vanilla[^1] et CSS Vanilla[^1].
 Concrètement, vous obtenez un simple **fichier HTML** que vous déposez sur votre bureau et qui, grâce au `localStorage` de votre navigateur, conserve vos données même après fermeture et réouverture de celui-ci.<br/>
-Aucune dépendance externe, aucun serveur, aucune faille dans le périmètre de sécurité.
+Aucune dépendance externe, aucun serveur, **aucune communication avec l'exterieur**, aucune faille dans le périmètre de sécurité tout se passe en local, pas besoin de serveur, de librairie, c'est un **fichier de votre bureau que vous ouvrez dans votre navigateur.**<br/>
+
+> C'est comme si vous utilisiez un papier et un stylo avec votre propre bloc note, à part que là c'est avec des capacités du web, mais en local.
+
+> [!TIP]
+> Astuce utile pour les lecteurs.
+
+> [!WARNING]
+> Attention à ce point important.
+
+> [!INFO]
+> Information complémentaire.
+
+> [!IMPORTANT]
+> Point crucial à ne pas manquer.
 
 ## L'IA à la rescousse
 
 Une fois ce parti pris technique posé, du **HTML brut**, du **JavaScript** et du **CSS** uniquement, vous pouvez vous faire accompagner par un assistant de code IA pour générer l'application qui vous conviendra.
+
+Les LLM récents et compétitifs maitrisent particulièrement bien ces languages et si vous savez bien prompter et découper vous pouvez faire des choses très propres.
 
 J'en ai justement **conçu une** que je mets à **votre disposition**. Le code est simple à comprendre et pourtant ses fonctionnalités sont cool et bien pratiques. D'ailleurs vous pouvez même **cliquer dessus** pour la **tester**.
 
