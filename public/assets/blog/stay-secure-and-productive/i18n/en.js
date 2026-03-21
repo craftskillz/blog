@@ -122,6 +122,7 @@ var i18n_en = {
   modal_bloc_type_p: "Text",
   modal_bloc_type_pre: "Code",
   modal_bloc_type_ul: "Bullet list",
+  modal_bloc_type_table: "Table",
   modal_bloc_label_content: "Content",
   modal_bloc_new: "New block",
   modal_bloc_edit: "Edit block",
@@ -129,10 +130,28 @@ var i18n_en = {
   modal_bloc_placeholder_pre: "Code…",
   modal_bloc_placeholder_b: "Title…",
   modal_bloc_placeholder_p: "Text…",
+  modal_bloc_placeholder_table: "Header 1 | Header 2 | Header 3\nValue A | Value B | Value C\nValue D | Value E | Value F",
   modal_bloc_btn_save: "Save",
 
   // Modal confirm delete block
   modal_suppr_bloc_title: "Delete this block?",
+
+  // Diagrams
+  diag_page_title: "Diagrams",
+  diag_btn_save: "save",
+  diag_btn_new: "+ New",
+  diag_my_diagrams: "My diagrams",
+  diag_new_diagram: "New diagram",
+  diag_tool_select:  "Select / Move",
+  diag_tool_rect:    "Rectangle",
+  diag_tool_rounded: "Rounded rectangle",
+  diag_tool_db:      "Database",
+  diag_tool_cloud:   "External service / Cloud",
+  diag_tool_text:    "Free text",
+  diag_tool_arrow:   "Arrow (click source → click target, or drag from a connection dot)",
+  diag_tool_delete:  "Delete selection (Del)",
+  diag_first_save_error: "File not found. Select the folder containing <strong>diagrammes.js</strong>.",
+  diag_edit_text: "Edit text",
 
   // Admin
   admin_subtitle: "data reset",

@@ -122,6 +122,7 @@ var i18n_fr = {
   modal_bloc_type_p: "Texte",
   modal_bloc_type_pre: "Code",
   modal_bloc_type_ul: "Liste à puces",
+  modal_bloc_type_table: "Tableau",
   modal_bloc_label_content: "Contenu",
   modal_bloc_new: "Nouveau bloc",
   modal_bloc_edit: "Modifier le bloc",
@@ -129,10 +130,28 @@ var i18n_fr = {
   modal_bloc_placeholder_pre: "Code…",
   modal_bloc_placeholder_b: "Titre…",
   modal_bloc_placeholder_p: "Texte…",
+  modal_bloc_placeholder_table: "En-tête 1 | En-tête 2 | En-tête 3\nValeur A | Valeur B | Valeur C\nValeur D | Valeur E | Valeur F",
   modal_bloc_btn_save: "Enregistrer",
 
   // Modal confirm suppr bloc
   modal_suppr_bloc_title: "Supprimer le bloc ?",
+
+  // Diagrammes
+  diag_page_title: "Diagrammes",
+  diag_btn_save: "enregistrer",
+  diag_btn_new: "+ Nouveau",
+  diag_my_diagrams: "Mes diagrammes",
+  diag_new_diagram: "Nouveau diagramme",
+  diag_tool_select:  "Sélectionner / Déplacer",
+  diag_tool_rect:    "Rectangle",
+  diag_tool_rounded: "Rectangle arrondi",
+  diag_tool_db:      "Base de données",
+  diag_tool_cloud:   "Service externe / Cloud",
+  diag_tool_text:    "Texte libre",
+  diag_tool_arrow:   "Flèche (clic source → clic cible, ou drag depuis un point de connexion)",
+  diag_tool_delete:  "Supprimer la sélection (Del)",
+  diag_first_save_error: "Fichier introuvable. Sélectionne le dossier contenant <strong>diagrammes.js</strong>.",
+  diag_edit_text: "Modifier le texte",
 
   // Admin
   admin_subtitle: "réinitialisation des données",
