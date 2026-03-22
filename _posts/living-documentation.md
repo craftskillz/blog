@@ -22,11 +22,15 @@ Le problème n'est pas **uniquement** le manque de bonne volonté.
 <br/>
 C'est que les outils habituels
 créent trop de **friction** : ouvrir Confluence, se logger, trouver le bon espace,
-créer une page, la formater... plus on accumule de la friction, moins on écrit.
+créer une page, la formater... plus on accumule de la friction, moins on écrit et au final, la documentation reste dans les têtes, ou dans des fichiers Markdown éparpillés que personne ne consulte parce qu'il n'existe aucun endroit pour les lire confortablement.
 
-> [!INFO inline]
-> Au final, la documentation reste dans les têtes, ou dans des fichiers Markdown éparpillés
-> que personne ne consulte parce qu'il n'existe aucun endroit pour les lire confortablement.
+> [!NOTE]
+> Ce post parle d'un outil OpenSource que j'ai créé au départ pour mes besoins perso, pour minimiser cette friction et me faciliter la vie dans la documentation de mes projets.
+
+## L'idée : des fichiers Markdown servis localement
+
+Perso, sur tous mes projets j'ai un dossier doc/adrs et je le lance via npx comme un doc portal local sur n'importe quel projet
+C'est vraiment moins de friction, et la doc vit dans la base de code
 
 On finit par avoir des **documentations mortes** : ce diagramme d'architecture qui montre encore le microservice qu'on a supprimé il y a six mois, ce `CONTRIBUTING.md` dont les commandes ne fonctionnent plus depuis la migration vers un nouveau tooling, cet ADR qui décrit un choix d'infrastructure que l'équipe a abandonné sans laisser de trace... La documentation morte est pire que l'absence de documentation : **elle induit en erreur**.
 
@@ -34,8 +38,6 @@ Cyrille Martraire dans son ouvrage **"Living Documentation"** [^1] [^2] formule 
 <br/>Ce qui compte, c'est le transfert de connaissance, pas le document en lui-même, et si ce document diverge de la réalité, il trahit exactement ce but.
 
 J'ai voulu résoudre exactement ce problème avec **<a href="https://www.npmjs.com/package/living-documentation" target="_blank">living-documentation</a>**[^3], un petit outil inspiré des réflexions que j'ai découvertes dans le livre **"Living Documentation"** [^1] [^2] de Cyrille Martraire.
-
-## L'idée : des fichiers Markdown servis localement
 
 Le parti pris est simple : vos fichiers `.md` restent dans votre dépôt, à côté de
 votre code, et un outil local les sert dans un **viewer élégant et fonctionnel**, accessible depuis votre navigateur.
