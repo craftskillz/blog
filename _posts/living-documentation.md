@@ -29,11 +29,6 @@ créer une page, la formater... plus on accumule de la friction, moins on écrit
 
 ## L'idée : des fichiers Markdown servis localement
 
-Perso, sur tous mes projets j'ai un dossier doc/adrs et je le lance via npx comme un doc portal local sur n'importe quel projet
-C'est vraiment moins de friction, et la doc vit dans la base de code
-
-On finit par avoir des **documentations mortes** : ce diagramme d'architecture qui montre encore le microservice qu'on a supprimé il y a six mois, ce `CONTRIBUTING.md` dont les commandes ne fonctionnent plus depuis la migration vers un nouveau tooling, cet ADR qui décrit un choix d'infrastructure que l'équipe a abandonné sans laisser de trace... La documentation morte est pire que l'absence de documentation : **elle induit en erreur**.
-
 Cyrille Martraire dans son ouvrage **"Living Documentation"** [^1] [^2] formule le problème de façon lumineuse : la documentation, c'est avant tout **"le processus de transmission de connaissances précieuses à d'autres personnes, maintenant et dans le futur"**.
 <br/>Ce qui compte, c'est le transfert de connaissance, pas le document en lui-même, et si ce document diverge de la réalité, il trahit exactement ce but.
 
