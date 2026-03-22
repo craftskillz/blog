@@ -32,7 +32,7 @@ créer une page, la formater... plus on accumule de la friction, moins on écrit
 Cyrille Martraire dans son ouvrage **"Living Documentation"** [^1] [^2] formule le problème de façon lumineuse : la documentation, c'est avant tout **"le processus de transmission de connaissances précieuses à d'autres personnes, maintenant et dans le futur"**.
 <br/>Ce qui compte, c'est le transfert de connaissance, pas le document en lui-même, et si ce document diverge de la réalité, il trahit exactement ce but.
 
-J'ai voulu résoudre exactement ce problème avec **<a href="https://www.npmjs.com/package/living-documentation" target="_blank">living-documentation</a>**[^3], un petit outil inspiré des réflexions que j'ai découvertes dans le livre **"Living Documentation"** [^1] [^2] de Cyrille Martraire.
+J'ai voulu résoudre exactement ce problème avec **<a href="https://www.npmjs.com/package/living-documentation" target="_blank">living-documentation</a>**[^3], un petit outil inspiré des réflexions que j'ai découvertes dans le livre **"Living Documentation"** [^1] [^2].
 
 Le parti pris est simple : vos fichiers `.md` restent dans votre dépôt, à côté de
 votre code, et un outil local les sert dans un **viewer élégant et fonctionnel**, accessible depuis votre navigateur.
