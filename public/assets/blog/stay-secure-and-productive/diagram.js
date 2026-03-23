@@ -9,6 +9,10 @@ var currentDiagramIdx = 0;
 var viewTransform = { x: 60, y: 60, scale: 1 };
 var selectedId = null;
 var selectedType = null;   // "shape" | "arrow"
+var selectedIds = [];      // multi-sélection (ids de formes)
+var rubberBandState = null; // { sx, sy } pendant le lasso
+var clipboard = [];        // formes copiées (Ctrl+C / Ctrl+V)
+var pendingImageBlob = null; // image en attente de sélection du dossier
 var dragState = null;
 var panStart = null;
 var arrowSrcId = null;
@@ -35,6 +39,7 @@ var DEFAULT_SIZES = {
   db:      { w: 100, h: 65 },
   cloud:   { w: 110, h: 65 },
   text:    { w: 110, h: 34 },
+  postit:  { w: 130, h: 110 },
 };
 
 // ── Helpers ──
@@ -76,6 +81,7 @@ function checkDiffDiagrammes() {
 
 // ── File System Access API ──
 var IDB_KEY_DIAG = "diagrammes";
+var IDB_KEY_DIR  = "diagrammes_dir";
 
 function ouvrirDB_Diag() {
   return new Promise(function (resolve, reject) {
@@ -110,6 +116,28 @@ function recupererHandle_Diag() {
   });
 }
 
+function sauvegarderDirHandle(handle) {
+  return ouvrirDB_Diag().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var tx = db.transaction("fileHandles", "readwrite");
+      tx.objectStore("fileHandles").put(handle, IDB_KEY_DIR);
+      tx.oncomplete = resolve;
+      tx.onerror = function (e) { reject(e.target.error); };
+    });
+  });
+}
+
+function recupererDirHandle() {
+  return ouvrirDB_Diag().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      var tx = db.transaction("fileHandles", "readonly");
+      var req = tx.objectStore("fileHandles").get(IDB_KEY_DIR);
+      req.onsuccess = function (e) { resolve(e.target.result || null); };
+      req.onerror  = function (e) { reject(e.target.error); };
+    });
+  });
+}
+
 function enregistrerDiagrammes() {
   if (!("showDirectoryPicker" in window)) return;
   recupererHandle_Diag().then(function (handle) {
@@ -128,12 +156,23 @@ function fermerModalSauvegardeDiag() {
 
 function ouvrirSelecteurFichierDiag() {
   fermerModalSauvegardeDiag();
+  var capturedDir = null;
   window.showDirectoryPicker()
-    .then(function (dir) { return dir.getFileHandle("diagrammes.js"); })
+    .then(function (dir) {
+      capturedDir = dir;
+      sauvegarderDirHandle(dir);
+      return dir.getFileHandle("diagrammes.js");
+    })
     .then(function (handle) {
       document.getElementById("erreurFichierDiag").style.display = "none";
       return sauvegarderHandle_Diag(handle).then(function () {
         return ecrireFichierDiag(handle);
+      }).then(function () {
+        if (pendingImageBlob && capturedDir) {
+          var blob = pendingImageBlob;
+          pendingImageBlob = null;
+          enregistrerImageDansBoard(blob, capturedDir);
+        }
       });
     })
     .catch(function (err) {
@@ -163,6 +202,63 @@ function ecrireFichierDiag(handle) {
       });
     })
     .catch(function (err) { console.error(err); });
+}
+
+// ── Image paste ──
+function handleImagePaste(blob) {
+  recupererDirHandle().then(function (dirHandle) {
+    if (!dirHandle) {
+      pendingImageBlob = blob;
+      document.getElementById("erreurFichierDiag").style.display = "none";
+      document.getElementById("modalPremiereSauvegardeDiag").classList.add("open");
+    } else {
+      dirHandle.queryPermission({ mode: "readwrite" }).then(function (p) {
+        if (p !== "granted") return dirHandle.requestPermission({ mode: "readwrite" }).then(function (p2) { return p2; });
+        return p;
+      }).then(function (p) {
+        if (p === "granted") enregistrerImageDansBoard(blob, dirHandle);
+      });
+    }
+  });
+}
+
+function enregistrerImageDansBoard(blob, dirHandle) {
+  var filename = "img_" + Date.now() + ".png";
+  var src = "images/" + filename;
+  dirHandle.getDirectoryHandle("images", { create: true })
+    .then(function (imagesDir) {
+      return imagesDir.getFileHandle(filename, { create: true });
+    })
+    .then(function (fileHandle) {
+      return fileHandle.createWritable().then(function (w) {
+        return w.write(blob).then(function () { return w.close(); });
+      });
+    })
+    .then(function () {
+      // Lire les dimensions réelles de l'image
+      var url = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var maxW = 600;
+        var w = Math.min(img.naturalWidth, maxW);
+        var h = Math.round(img.naturalHeight * (w / img.naturalWidth));
+        // Centrer sur la vue courante
+        var svg = document.getElementById("canvas");
+        var r = svg.getBoundingClientRect();
+        var cx = Math.round((r.width  / 2 - viewTransform.x) / viewTransform.scale - w / 2);
+        var cy = Math.round((r.height / 2 - viewTransform.y) / viewTransform.scale - h / 2);
+        var diag = getCurrentDiagram();
+        var shape = { id: "s" + Date.now(), type: "image", x: cx, y: cy, w: w, h: h, text: "", color: "", src: src };
+        diag.shapes.push(shape);
+        selectedIds = [shape.id];  selectedId = shape.id;  selectedType = "shape";
+        saveDiagrammes();
+        renderAll();
+        document.getElementById("colorPanel").style.display = "none";
+      };
+      img.src = url;
+    })
+    .catch(function (err) { console.error("Image paste error:", err); });
 }
 
 // ── Coordonnées SVG ──
@@ -203,7 +299,7 @@ function applyZoom(factor, cx, cy) {
 // ── Rendu des formes ──
 function renderShape(shape) {
   var c = COLORS[shape.color] || COLORS[DEFAULT_COLOR];
-  var isSel = selectedId === shape.id && selectedType === "shape";
+  var isSel = selectedIds.indexOf(shape.id) !== -1;
   var stroke = isSel ? "#f97316" : c.stroke;
   var sw = isSel ? 2.5 : 1.5;
 
@@ -261,6 +357,54 @@ function renderShape(shape) {
     el.setAttribute("stroke-dasharray", "5,3");
     g.appendChild(el);
 
+  } else if (shape.type === "postit") {
+    var fold = 18;
+    var body = createSVGEl("path");
+    body.setAttribute("d", [
+      "M", shape.x, shape.y,
+      "L", shape.x + shape.w - fold, shape.y,
+      "L", shape.x + shape.w, shape.y + fold,
+      "L", shape.x + shape.w, shape.y + shape.h,
+      "L", shape.x, shape.y + shape.h,
+      "Z",
+    ].join(" "));
+    body.setAttribute("fill", c.fill);
+    body.setAttribute("stroke", stroke);
+    body.setAttribute("stroke-width", sw);
+    g.appendChild(body);
+    // Triangle du coin replié
+    var foldTri = createSVGEl("path");
+    foldTri.setAttribute("d", [
+      "M", shape.x + shape.w - fold, shape.y,
+      "L", shape.x + shape.w, shape.y + fold,
+      "L", shape.x + shape.w - fold, shape.y + fold,
+      "Z",
+    ].join(" "));
+    foldTri.setAttribute("fill", c.stroke);
+    foldTri.setAttribute("fill-opacity", "0.25");
+    foldTri.setAttribute("stroke", stroke);
+    foldTri.setAttribute("stroke-width", sw * 0.7);
+    g.appendChild(foldTri);
+
+  } else if (shape.type === "image") {
+    var imgEl = createSVGEl("image");
+    imgEl.setAttribute("x", shape.x);        imgEl.setAttribute("y", shape.y);
+    imgEl.setAttribute("width", shape.w);    imgEl.setAttribute("height", shape.h);
+    imgEl.setAttribute("href", shape.src);
+    imgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    g.appendChild(imgEl);
+    // Bordure de sélection
+    if (isSel) {
+      var selRect = createSVGEl("rect");
+      selRect.setAttribute("x", shape.x);        selRect.setAttribute("y", shape.y);
+      selRect.setAttribute("width", shape.w);    selRect.setAttribute("height", shape.h);
+      selRect.setAttribute("fill", "none");
+      selRect.setAttribute("stroke", "#f97316");  selRect.setAttribute("stroke-width", "2");
+      selRect.setAttribute("stroke-dasharray", "6,3");
+      selRect.setAttribute("pointer-events", "none");
+      g.appendChild(selRect);
+    }
+
   } else if (shape.type === "text") {
     // pas de fond — juste le texte
   }
@@ -279,11 +423,26 @@ function renderShape(shape) {
   txt.setAttribute("font-family", '"Segoe UI",system-ui,sans-serif');
   txt.setAttribute("font-weight", shape.type === "text" ? "400" : "600");
   txt.setAttribute("pointer-events", "none");
-  txt.textContent = shape.text || "";
+  if (shape.type === "postit") {
+    var lines = (shape.text || "").split("\n");
+    var lineH = 17;
+    var firstY = shape.y + (shape.h - lines.length * lineH) / 2 + lineH * 0.5;
+    txt.setAttribute("y", firstY);
+    txt.removeAttribute("dominant-baseline");
+    lines.forEach(function (line, i) {
+      var ts = createSVGEl("tspan");
+      ts.setAttribute("x", shape.x + shape.w / 2);
+      if (i > 0) ts.setAttribute("dy", lineH + "px");
+      ts.textContent = line || " ";
+      txt.appendChild(ts);
+    });
+  } else {
+    txt.textContent = shape.text || "";
+  }
   g.appendChild(txt);
 
-  // ── Poignée de redimensionnement (coin bas-droit) ──
-  if (isSel) {
+  // ── Poignée de redimensionnement (coin bas-droit, sélection unique seulement) ──
+  if (isSel && selectedIds.length === 1) {
     var grip = createSVGEl("rect");
     grip.setAttribute("x", shape.x + shape.w - 5);
     grip.setAttribute("y", shape.y + shape.h - 5);
@@ -296,23 +455,28 @@ function renderShape(shape) {
     g.appendChild(grip);
   }
 
-  // ── Points de connexion (visibles au hover et en mode flèche) ──
-  var hcx = shape.x + shape.w / 2, hcy = shape.y + shape.h / 2;
-  [
-    [hcx, shape.y],
-    [hcx, shape.y + shape.h],
-    [shape.x, hcy],
-    [shape.x + shape.w, hcy],
-  ].forEach(function (pt) {
-    var dot = createSVGEl("circle");
-    dot.setAttribute("cx", pt[0]);  dot.setAttribute("cy", pt[1]);
-    dot.setAttribute("r", 5);
-    dot.setAttribute("fill", "#f97316");
-    dot.setAttribute("stroke", "#fff");  dot.setAttribute("stroke-width", 1.5);
-    dot.classList.add("conn-dot");
-    dot.setAttribute("data-shape-id", shape.id);
-    g.appendChild(dot);
-  });
+  // ── Texte non rendu pour les images ──
+  if (shape.type === "image") return g;
+
+  // ── Points de connexion (visibles au hover et en mode flèche — sauf postit) ──
+  if (shape.type !== "postit") {
+    var hcx = shape.x + shape.w / 2, hcy = shape.y + shape.h / 2;
+    [
+      [hcx, shape.y],
+      [hcx, shape.y + shape.h],
+      [shape.x, hcy],
+      [shape.x + shape.w, hcy],
+    ].forEach(function (pt) {
+      var dot = createSVGEl("circle");
+      dot.setAttribute("cx", pt[0]);  dot.setAttribute("cy", pt[1]);
+      dot.setAttribute("r", 5);
+      dot.setAttribute("fill", "#f97316");
+      dot.setAttribute("stroke", "#fff");  dot.setAttribute("stroke-width", 1.5);
+      dot.classList.add("conn-dot");
+      dot.setAttribute("data-shape-id", shape.id);
+      g.appendChild(dot);
+    });
+  }
 
   return g;
 }
@@ -436,6 +600,7 @@ function renderDiagramList() {
 function selectDiagramme(idx) {
   currentDiagramIdx = idx;
   selectedId = null;  selectedType = null;
+  selectedIds = [];
   viewTransform = { x: 60, y: 60, scale: 1 };
   document.getElementById("colorPanel").style.display = "none";
   renderAll();
@@ -476,11 +641,13 @@ function setTool(tool) {
   if (btn) btn.classList.add("active");
 
   arrowSrcId = null;
+  selectedIds = [];
   document.getElementById("tempArrow").style.display = "none";
   document.getElementById("canvas").setAttribute(
     "data-tool", tool
   );
   if (tool !== "select") {
+    selectedId = null;  selectedType = null;
     document.getElementById("colorPanel").style.display = "none";
   }
   renderAll();
@@ -490,7 +657,7 @@ function setTool(tool) {
 function addShape(type, x, y) {
   var diag = getCurrentDiagram();
   var size = DEFAULT_SIZES[type] || { w: 120, h: 50 };
-  var labels = { db: "Database", cloud: "Cloud", text: "Label" };
+  var labels = { db: "Database", cloud: "Cloud", text: "Label", postit: "" };
   var shape = {
     id: "s" + Date.now(),
     type: type,
@@ -498,12 +665,13 @@ function addShape(type, x, y) {
     y: Math.round(y - size.h / 2),
     w: size.w,
     h: size.h,
-    text: labels[type] || "Service",
-    color: DEFAULT_COLOR,
+    text: type in labels ? labels[type] : "Service",
+    color: type === "postit" ? "t-amber" : DEFAULT_COLOR,
   };
   diag.shapes.push(shape);
   saveDiagrammes();
   selectedId = shape.id;  selectedType = "shape";
+  selectedIds = [shape.id];
   renderAll();
   document.getElementById("colorPanel").style.display = "flex";
   startTextEdit(shape.id);
@@ -511,17 +679,20 @@ function addShape(type, x, y) {
 
 // ── Suppression ──
 function deleteSelected() {
-  if (!selectedId) return;
   var diag = getCurrentDiagram();
-  if (selectedType === "shape") {
-    diag.shapes = diag.shapes.filter(function (s) { return s.id !== selectedId; });
+  if (selectedIds.length > 0) {
+    diag.shapes = diag.shapes.filter(function (s) { return selectedIds.indexOf(s.id) === -1; });
     diag.arrows = diag.arrows.filter(function (a) {
-      return a.from !== selectedId && a.to !== selectedId;
+      return selectedIds.indexOf(a.from) === -1 && selectedIds.indexOf(a.to) === -1;
     });
-  } else if (selectedType === "arrow") {
+    selectedIds = [];
+    selectedId = null;  selectedType = null;
+  } else if (selectedId && selectedType === "arrow") {
     diag.arrows = diag.arrows.filter(function (a) { return a.id !== selectedId; });
+    selectedId = null;  selectedType = null;
+  } else {
+    return;
   }
-  selectedId = null;  selectedType = null;
   document.getElementById("colorPanel").style.display = "none";
   saveDiagrammes();
   renderAll();
@@ -529,11 +700,12 @@ function deleteSelected() {
 
 // ── Couleur ──
 function setShapeColor(color) {
-  if (!selectedId || selectedType !== "shape") return;
+  if (selectedIds.length === 0) return;
   var diag = getCurrentDiagram();
-  var shape = diag.shapes.find(function (s) { return s.id === selectedId; });
-  if (!shape) return;
-  shape.color = color;
+  selectedIds.forEach(function (id) {
+    var shape = diag.shapes.find(function (s) { return s.id === id; });
+    if (shape) shape.color = color;
+  });
   saveDiagrammes();
   renderAll();
   document.getElementById("colorPanel").style.display = "flex";
@@ -543,7 +715,7 @@ function setShapeColor(color) {
 function startTextEdit(shapeId) {
   var diag = getCurrentDiagram();
   var shape = diag.shapes.find(function (s) { return s.id === shapeId; });
-  if (!shape) return;
+  if (!shape || shape.type === "image") return;
   editingShapeId = shapeId;
 
   var svg = document.getElementById("canvas");
@@ -554,19 +726,35 @@ function startTextEdit(shapeId) {
   var sh = shape.h * viewTransform.scale;
   var c = COLORS[shape.color] || COLORS[DEFAULT_COLOR];
 
-  var input = document.getElementById("shapeTextInput");
-  input.value = shape.text || "";
-  input.style.left   = (sx + sw * 0.08) + "px";
-  input.style.top    = (sy + sh * 0.22) + "px";
-  input.style.width  = (sw * 0.84) + "px";
-  input.style.fontSize   = Math.max(10, 12 * viewTransform.scale) + "px";
-  input.style.color      = c.text;
-
-  document.getElementById("textOverlay").style.display = "block";
-  setTimeout(function () {
-    input.focus();
-    input.select();
-  }, 10);
+  if (shape.type === "postit") {
+    var ta = document.getElementById("postitTextInput");
+    ta.value = shape.text || "";
+    ta.style.left      = (sx + 8) + "px";
+    ta.style.top       = (sy + 8) + "px";
+    ta.style.width     = (sw - 16) + "px";
+    ta.style.height    = (sh - 16) + "px";
+    ta.style.fontSize  = Math.max(10, 12 * viewTransform.scale) + "px";
+    ta.style.color     = c.text;
+    ta.style.display   = "block";
+    document.getElementById("shapeTextInput").style.display = "none";
+    document.getElementById("textOverlay").style.display = "block";
+    // Masquer le texte SVG du postit pour éviter la double lecture
+    var sg = document.querySelector('#shapesLayer [data-id="' + shapeId + '"]');
+    if (sg) { var tx = sg.querySelector("text"); if (tx) tx.style.visibility = "hidden"; }
+    setTimeout(function () { ta.focus(); ta.select(); }, 10);
+  } else {
+    var input = document.getElementById("shapeTextInput");
+    input.value = shape.text || "";
+    input.style.left   = (sx + sw * 0.08) + "px";
+    input.style.top    = (sy + sh * 0.22) + "px";
+    input.style.width  = (sw * 0.84) + "px";
+    input.style.fontSize   = Math.max(10, 12 * viewTransform.scale) + "px";
+    input.style.color      = c.text;
+    input.style.display    = "block";
+    document.getElementById("postitTextInput").style.display = "none";
+    document.getElementById("textOverlay").style.display = "block";
+    setTimeout(function () { input.focus(); input.select(); }, 10);
+  }
 }
 
 function confirmTextEdit() {
@@ -574,7 +762,14 @@ function confirmTextEdit() {
   var diag = getCurrentDiagram();
   if (editingShapeId) {
     var shape = diag.shapes.find(function (s) { return s.id === editingShapeId; });
-    if (shape) { shape.text = input.value; saveDiagrammes(); renderAll(); }
+    if (shape) {
+      var val = shape.type === "postit"
+        ? document.getElementById("postitTextInput").value
+        : input.value;
+      shape.text = val;
+      saveDiagrammes();
+      renderAll();
+    }
     editingShapeId = null;
   } else if (editingArrowId) {
     var arrow = (diag.arrows || []).find(function (a) { return a.id === editingArrowId; });
@@ -582,6 +777,8 @@ function confirmTextEdit() {
     editingArrowId = null;
   }
   document.getElementById("textOverlay").style.display = "none";
+  document.getElementById("postitTextInput").style.display = "none";
+  document.getElementById("shapeTextInput").style.display = "block";
 }
 
 function startArrowTextEdit(arrowId) {
@@ -659,6 +856,7 @@ function createArrow(fromId, toId) {
   diag.arrows.push(arrow);
   saveDiagrammes();
   selectedId = arrow.id;  selectedType = "arrow";
+  selectedIds = [];
   renderAll();
   startArrowTextEdit(arrow.id);
 }
@@ -716,10 +914,38 @@ function onMouseDown(e) {
       }
       lastClickTime = now;  lastClickShapeId = shape.id;  lastClickArrowId = null;
 
-      dragState = { type: "move", id: shape.id, sx: pt.x, sy: pt.y, ox: shape.x, oy: shape.y };
-      selectedId = shape.id;  selectedType = "shape";
-      document.getElementById("colorPanel").style.display = "flex";
-      renderAll();
+      if (e.shiftKey) {
+        // Shift+clic : ajouter/retirer de la multi-sélection
+        var idx = selectedIds.indexOf(shape.id);
+        if (idx === -1) {
+          selectedIds.push(shape.id);
+          selectedId = shape.id;  selectedType = "shape";
+        } else {
+          selectedIds.splice(idx, 1);
+          selectedId = selectedIds.length > 0 ? selectedIds[selectedIds.length - 1] : null;
+          selectedType = selectedId ? "shape" : null;
+        }
+        document.getElementById("colorPanel").style.display = selectedIds.length > 0 ? "flex" : "none";
+        renderAll();
+      } else if (selectedIds.indexOf(shape.id) !== -1 && selectedIds.length > 1) {
+        // Clic sur une forme déjà dans la multi-sélection → multi-déplacement
+        var diag = getCurrentDiagram();
+        dragState = {
+          type: "multi-move",
+          sx: pt.x, sy: pt.y,
+          origPositions: selectedIds.map(function (id) {
+            var s = diag.shapes.find(function (sh) { return sh.id === id; });
+            return { id: id, ox: s ? s.x : 0, oy: s ? s.y : 0 };
+          }),
+        };
+      } else {
+        // Clic simple → sélection unique
+        selectedIds = [shape.id];
+        selectedId = shape.id;  selectedType = "shape";
+        dragState = { type: "move", id: shape.id, sx: pt.x, sy: pt.y, ox: shape.x, oy: shape.y };
+        document.getElementById("colorPanel").style.display = "flex";
+        renderAll();
+      }
     } else {
       var aid = arrowIdAt(pt.x, pt.y);
       if (aid) {
@@ -728,6 +954,7 @@ function onMouseDown(e) {
         if (now2 - lastClickTime < 350 && lastClickArrowId === aid) {
           lastClickTime = 0;  lastClickArrowId = null;
           selectedId = aid;  selectedType = "arrow";
+          selectedIds = [];
           renderAll();
           startArrowTextEdit(aid);
           return;
@@ -735,19 +962,24 @@ function onMouseDown(e) {
         lastClickTime = now2;  lastClickArrowId = aid;
 
         selectedId = aid;  selectedType = "arrow";
+        selectedIds = [];
         document.getElementById("colorPanel").style.display = "none";
         renderAll();
+      } else if (e.shiftKey) {
+        // Shift+drag sur fond vide → lasso de sélection
+        rubberBandState = { sx: pt.x, sy: pt.y };
       } else {
         // Pan
         panStart = { cx: e.clientX, cy: e.clientY, px: viewTransform.x, py: viewTransform.y };
         selectedId = null;  selectedType = null;
+        selectedIds = [];
         document.getElementById("colorPanel").style.display = "none";
         renderAll();
       }
     }
 
   } else if (currentTool === "arrow") {
-    if (shape) {
+    if (shape && shape.type !== "postit") {
       if (!arrowSrcId) {
         arrowSrcId = shape.id;
         var ta = document.getElementById("tempArrow");
@@ -783,21 +1015,35 @@ function onMouseMove(e) {
     }
   }
 
-  if (dragState) {
+  if (rubberBandState) {
+    var rb = document.getElementById("rubberBand");
+    var rbX = Math.min(rubberBandState.sx, pt.x);
+    var rbY = Math.min(rubberBandState.sy, pt.y);
+    rb.setAttribute("x", rbX);  rb.setAttribute("y", rbY);
+    rb.setAttribute("width",  Math.abs(pt.x - rubberBandState.sx));
+    rb.setAttribute("height", Math.abs(pt.y - rubberBandState.sy));
+    rb.style.display = "";
+  } else if (dragState) {
     var diag = getCurrentDiagram();
-    var shape = diag.shapes.find(function (s) { return s.id === dragState.id; });
-    if (!shape) return;
-    if (dragState.type === "move") {
-      shape.x = Math.round(dragState.ox + pt.x - dragState.sx);
-      shape.y = Math.round(dragState.oy + pt.y - dragState.sy);
-    } else if (dragState.type === "resize") {
-      shape.w = Math.max(60, Math.round(dragState.ow + pt.x - dragState.sx));
-      shape.h = Math.max(30, Math.round(dragState.oh + pt.y - dragState.sy));
-    }
-    renderAll();
-    // Repositionner la palette si visible
-    if (selectedId === shape.id && document.getElementById("colorPanel").style.display !== "none") {
-      // la palette est fixée en haut, pas besoin de la bouger
+    if (dragState.type === "multi-move") {
+      var dx = pt.x - dragState.sx;
+      var dy = pt.y - dragState.sy;
+      dragState.origPositions.forEach(function (op) {
+        var s = diag.shapes.find(function (sh) { return sh.id === op.id; });
+        if (s) { s.x = Math.round(op.ox + dx); s.y = Math.round(op.oy + dy); }
+      });
+      renderAll();
+    } else {
+      var shape = diag.shapes.find(function (s) { return s.id === dragState.id; });
+      if (!shape) return;
+      if (dragState.type === "move") {
+        shape.x = Math.round(dragState.ox + pt.x - dragState.sx);
+        shape.y = Math.round(dragState.oy + pt.y - dragState.sy);
+      } else if (dragState.type === "resize") {
+        shape.w = Math.max(60, Math.round(dragState.ow + pt.x - dragState.sx));
+        shape.h = Math.max(30, Math.round(dragState.oh + pt.y - dragState.sy));
+      }
+      renderAll();
     }
   } else if (panStart) {
     viewTransform.x = panStart.px + (e.clientX - panStart.cx);
@@ -814,11 +1060,30 @@ function onMouseUp(e) {
     document.getElementById("tempArrow").style.display = "none";
     if (currentTool !== "arrow") {
       var target = shapeAt(pt.x, pt.y);
-      if (target && target.id !== arrowSrcId) {
+      if (target && target.id !== arrowSrcId && target.type !== "postit") {
         createArrow(arrowSrcId, target.id);
       }
       arrowSrcId = null;
     }
+  }
+
+  if (rubberBandState) {
+    document.getElementById("rubberBand").style.display = "none";
+    var minX = Math.min(rubberBandState.sx, pt.x);
+    var minY = Math.min(rubberBandState.sy, pt.y);
+    var maxX = Math.max(rubberBandState.sx, pt.x);
+    var maxY = Math.max(rubberBandState.sy, pt.y);
+    if (maxX - minX > 4 || maxY - minY > 4) {
+      var diag = getCurrentDiagram();
+      selectedIds = (diag.shapes || []).filter(function (s) {
+        return s.x < maxX && s.x + s.w > minX && s.y < maxY && s.y + s.h > minY;
+      }).map(function (s) { return s.id; });
+      selectedId   = selectedIds.length > 0 ? selectedIds[0] : null;
+      selectedType = selectedIds.length > 0 ? "shape" : null;
+      document.getElementById("colorPanel").style.display = selectedIds.length > 0 ? "flex" : "none";
+    }
+    rubberBandState = null;
+    renderAll();
   }
 
   if (dragState) {
@@ -835,6 +1100,27 @@ function onWheel(e) {
   var svg = document.getElementById("canvas");
   var r = svg.getBoundingClientRect();
   applyZoom(e.deltaY < 0 ? 1.12 : 1 / 1.12, e.clientX - r.left, e.clientY - r.top);
+}
+
+// ── Coller des formes ──
+function pasteShapes() {
+  if (clipboard.length === 0) return;
+  var diag = getCurrentDiagram();
+  var now = Date.now();
+  var pasted = clipboard.map(function (s, i) {
+    return Object.assign({}, JSON.parse(JSON.stringify(s)), {
+      id: "s" + (now + i),
+      x: s.x + 20,
+      y: s.y + 20,
+    });
+  });
+  pasted.forEach(function (s) { diag.shapes.push(s); });
+  selectedIds = pasted.map(function (s) { return s.id; });
+  selectedId = selectedIds[0];  selectedType = "shape";
+  clipboard = pasted.map(function (s) { return JSON.parse(JSON.stringify(s)); });
+  saveDiagrammes();
+  renderAll();
+  document.getElementById("colorPanel").style.display = "flex";
 }
 
 // ── Init ──
@@ -867,13 +1153,60 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(confirmTextEdit, 100);
   });
 
+  var postitInput = document.getElementById("postitTextInput");
+  postitInput.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      document.getElementById("textOverlay").style.display = "none";
+      postitInput.style.display = "none";
+      document.getElementById("shapeTextInput").style.display = "block";
+      editingShapeId = null;
+      renderAll(); // restaure la visibilité du texte SVG
+    }
+    // Enter ajoute un saut de ligne (comportement natif textarea — pas de preventDefault)
+  });
+  postitInput.addEventListener("blur", function () {
+    setTimeout(confirmTextEdit, 100);
+  });
+
   document.addEventListener("keydown", function (e) {
-    if (document.activeElement.tagName === "INPUT") return;
+    if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
     if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
     if (e.key === "Escape") {
       arrowSrcId = null;
       document.getElementById("tempArrow").style.display = "none";
       setTool("select");
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+      e.preventDefault();
+      if (selectedIds.length === 0) return;
+      var diag = getCurrentDiagram();
+      clipboard = selectedIds.map(function (id) {
+        var s = diag.shapes.find(function (sh) { return sh.id === id; });
+        return s ? JSON.parse(JSON.stringify(s)) : null;
+      }).filter(Boolean);
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+      e.preventDefault();
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        pasteShapes();
+        return;
+      }
+      navigator.clipboard.read().then(function (clipItems) {
+        for (var i = 0; i < clipItems.length; i++) {
+          for (var j = 0; j < clipItems[i].types.length; j++) {
+            if (clipItems[i].types[j].indexOf("image") !== -1) {
+              clipItems[i].getType(clipItems[i].types[j]).then(function (blob) {
+                handleImagePaste(blob);
+              });
+              return;
+            }
+          }
+        }
+        // Aucune image → coller les formes
+        pasteShapes();
+      }).catch(function () {
+        pasteShapes();
+      });
     }
   });
 
