@@ -18,6 +18,8 @@ var dragState = null;
 var panStart = null;
 var arrowSrcId = null;
 var editingShapeId = null;
+var pickMode = null;          // "fontSize" | "fullStyle" | null
+var pickTargetIds = [];       // selectedIds sauvegardés pendant le pick
 var lastClickTime = 0;
 var lastClickShapeId = null;
 var lastClickArrowId = null;
@@ -66,7 +68,8 @@ function measureText(str, fontSize, fontWeight) {
   return ctx.measureText(str).width;
 }
 
-function wrapPostitLines(text, maxWidth) {
+function wrapPostitLines(text, maxWidth, fontSize) {
+  var fs = fontSize || 12;
   var result = [];
   (text || "").split("\n").forEach(function (line) {
     if (line === "") { result.push(""); return; }
@@ -74,7 +77,7 @@ function wrapPostitLines(text, maxWidth) {
     var current = "";
     words.forEach(function (word) {
       var test = current ? current + " " + word : word;
-      if (current && measureText(test, 12, "600") > maxWidth) {
+      if (current && measureText(test, fs, "600") > maxWidth) {
         result.push(current);
         current = word;
       } else {
@@ -404,7 +407,6 @@ function renderShape(shape) {
     el.setAttribute("fill", c.fill);
     el.setAttribute("stroke", stroke);
     el.setAttribute("stroke-width", sw);
-    el.setAttribute("stroke-dasharray", "5,3");
     g.appendChild(el);
 
   } else if (shape.type === "postit") {
@@ -463,27 +465,59 @@ function renderShape(shape) {
   var textCy = shape.type === "db"
     ? shape.y + shape.h * 0.62
     : shape.y + shape.h / 2;
+  var ta = shape.textAlign || "center";
+  var textAnchor = ta === "left" ? "start" : ta === "right" ? "end" : "middle";
   var txt = createSVGEl("text");
   txt.setAttribute("x", shape.x + shape.w / 2);
   txt.setAttribute("y", textCy);
-  txt.setAttribute("text-anchor", "middle");
+  txt.setAttribute("text-anchor", textAnchor);
   txt.setAttribute("dominant-baseline", "middle");
+  var fs = shape.fontSize || (shape.type === "text" ? 13 : 12);
   txt.setAttribute("fill", shape.type === "text" ? "#292524" : c.text);
-  txt.setAttribute("font-size", shape.type === "text" ? "13" : "12");
+  txt.setAttribute("font-size", fs);
   txt.setAttribute("font-family", '"Segoe UI",system-ui,sans-serif');
   txt.setAttribute("font-weight", shape.type === "text" ? "400" : "600");
   txt.setAttribute("pointer-events", "none");
+  var tv = shape.textValign || "middle";
   if (shape.type === "postit") {
-    var pad = 14; // marge gauche + droite
-    var lines = wrapPostitLines(shape.text || "", shape.w - pad * 2);
-    var lineH = 17;
-    var firstY = shape.y + (shape.h - lines.length * lineH) / 2 + lineH * 0.5;
+    var pad = 14;
+    var lines = wrapPostitLines(shape.text || "", shape.w - pad * 2, fs);
+    var lineH = Math.round(fs * 1.42);
+    var firstY = tv === "top"
+      ? shape.y + pad + lineH * 0.5
+      : tv === "bottom"
+        ? shape.y + shape.h - pad - (lines.length - 1) * lineH - fs * 0.2
+        : shape.y + (shape.h - lines.length * lineH) / 2 + lineH * 0.5 + fs * 0.3;
+    var tspanX = ta === "left" ? shape.x + pad : ta === "right" ? shape.x + shape.w - pad : shape.x + shape.w / 2;
     txt.setAttribute("y", firstY);
     txt.removeAttribute("dominant-baseline");
     lines.forEach(function (line, i) {
       var ts = createSVGEl("tspan");
-      ts.setAttribute("x", shape.x + shape.w / 2);
+      ts.setAttribute("x", tspanX);
       if (i > 0) ts.setAttribute("dy", lineH + "px");
+      ts.textContent = line || " ";
+      txt.appendChild(ts);
+    });
+  } else if (shape.type === "rect" || shape.type === "rounded" || shape.type === "db" || shape.type === "cloud") {
+    var wpad = shape.type === "cloud" ? Math.round(shape.w * 0.2) : 12;
+    var wvpad = shape.type === "cloud" ? Math.round(shape.h * 0.12) : 8;
+    var wlines = wrapPostitLines(shape.text || "", shape.w - wpad * 2, fs);
+    var wlineH = Math.round(fs * 1.33);
+    var wcenterY = shape.type === "db" ? shape.y + shape.h * 0.62 : shape.y + shape.h / 2;
+    var dbCapH = shape.type === "db" ? Math.min(12, shape.h * 0.2) * 2 : 0;
+    var wfirstY = tv === "top"
+      ? shape.y + dbCapH + wvpad + wlineH * 0.5
+      : tv === "bottom"
+        ? shape.y + shape.h - wvpad - (wlines.length - 1) * wlineH - fs * 0.2
+        : wcenterY - wlines.length * wlineH / 2 + wlineH * 0.5 + fs * 0.5;
+    var wtspanX = ta === "left" ? shape.x + wpad : ta === "right" ? shape.x + shape.w - wpad : shape.x + shape.w / 2;
+    txt.setAttribute("x", wtspanX);
+    txt.setAttribute("y", wfirstY);
+    txt.removeAttribute("dominant-baseline");
+    wlines.forEach(function (line, i) {
+      var ts = createSVGEl("tspan");
+      ts.setAttribute("x", wtspanX);
+      if (i > 0) ts.setAttribute("dy", wlineH + "px");
       ts.textContent = line || " ";
       txt.appendChild(ts);
     });
@@ -788,6 +822,85 @@ function setShapeColor(color) {
   document.getElementById("colorPanel").style.display = "flex";
 }
 
+function setShapeTextValign(valign) {
+  if (selectedIds.length === 0) return;
+  var diag = getCurrentDiagram();
+  selectedIds.forEach(function (id) {
+    var shape = diag.shapes.find(function (s) { return s.id === id; });
+    if (shape) shape.textValign = valign;
+  });
+  saveDiagrammes();
+  renderAll();
+  document.getElementById("colorPanel").style.display = "flex";
+}
+
+function setShapeTextAlign(align) {
+  if (selectedIds.length === 0) return;
+  var diag = getCurrentDiagram();
+  selectedIds.forEach(function (id) {
+    var shape = diag.shapes.find(function (s) { return s.id === id; });
+    if (shape) shape.textAlign = align;
+  });
+  saveDiagrammes();
+  renderAll();
+  document.getElementById("colorPanel").style.display = "flex";
+}
+
+function changeShapeFontSize(delta) {
+  if (selectedIds.length === 0) return;
+  var diag = getCurrentDiagram();
+  selectedIds.forEach(function (id) {
+    var shape = diag.shapes.find(function (s) { return s.id === id; });
+    if (!shape) return;
+    var current = shape.fontSize || (shape.type === "text" ? 13 : 12);
+    shape.fontSize = Math.max(8, Math.min(28, current + delta));
+  });
+  saveDiagrammes();
+  renderAll();
+  document.getElementById("colorPanel").style.display = "flex";
+}
+
+// ── Copie de style (pick mode) ──
+function startPickMode(mode) {
+  pickTargetIds = selectedIds.slice();
+  pickMode = mode;
+  document.getElementById("canvas").style.cursor = "crosshair";
+  document.getElementById("btnPickFont").classList.toggle("diagram-pick-active", mode === "fontSize");
+  document.getElementById("btnPickStyle").classList.toggle("diagram-pick-active", mode === "fullStyle");
+}
+
+function cancelPickMode() {
+  pickMode = null;
+  pickTargetIds = [];
+  document.getElementById("canvas").style.cursor = "";
+  document.getElementById("btnPickFont").classList.remove("diagram-pick-active");
+  document.getElementById("btnPickStyle").classList.remove("diagram-pick-active");
+}
+
+function applyPickMode(srcShape) {
+  var diag = getCurrentDiagram();
+  pickTargetIds.forEach(function (id) {
+    if (id === srcShape.id) return;
+    var shape = diag.shapes.find(function (s) { return s.id === id; });
+    if (!shape) return;
+    if (pickMode === "fontSize") {
+      shape.fontSize = srcShape.fontSize || (srcShape.type === "text" ? 13 : 12);
+    } else if (pickMode === "fullStyle") {
+      shape.fontSize   = srcShape.fontSize || (srcShape.type === "text" ? 13 : 12);
+      shape.color      = srcShape.color;
+      shape.type       = srcShape.type;
+      shape.w          = srcShape.w;
+      shape.h          = srcShape.h;
+      shape.textAlign  = srcShape.textAlign  || "center";
+      shape.textValign = srcShape.textValign || "middle";
+    }
+  });
+  selectedIds = pickTargetIds.slice();
+  saveDiagrammes();
+  renderAll();
+  document.getElementById("colorPanel").style.display = "flex";
+}
+
 // ── Édition texte inline ──
 function startTextEdit(shapeId) {
   var diag = getCurrentDiagram();
@@ -803,19 +916,34 @@ function startTextEdit(shapeId) {
   var sh = shape.h * viewTransform.scale;
   var c = COLORS[shape.color] || COLORS[DEFAULT_COLOR];
 
-  if (shape.type === "postit") {
+  var useTextarea = shape.type === "postit" || shape.type === "rect" || shape.type === "rounded" || shape.type === "db" || shape.type === "cloud";
+  if (useTextarea) {
     var ta = document.getElementById("postitTextInput");
     ta.value = shape.text || "";
-    ta.style.left      = (sx + 8) + "px";
-    ta.style.top       = (sy + 8) + "px";
-    ta.style.width     = (sw - 16) + "px";
-    ta.style.height    = (sh - 16) + "px";
-    ta.style.fontSize  = Math.max(10, 12 * viewTransform.scale) + "px";
+    var hpad = shape.type === "cloud" ? Math.round(sw * 0.15) : 8;
+    var vtop, vheight;
+    if (shape.type === "cloud") {
+      vtop    = sy + Math.round(sh * 0.12);
+      vheight = sh - Math.round(sh * 0.12) * 2;
+    } else if (shape.type === "db") {
+      var dbRy = Math.min(12, shape.h * 0.2) * viewTransform.scale;
+      vtop    = sy + dbRy * 2 + 4;
+      vheight = sh - dbRy * 2 - 12;
+    } else {
+      vtop    = sy + 8;
+      vheight = sh - 16;
+    }
+    ta.style.left      = (sx + hpad) + "px";
+    ta.style.top       = vtop + "px";
+    ta.style.width     = (sw - hpad * 2) + "px";
+    ta.style.height    = vheight + "px";
+    var editFs = shape.fontSize || (shape.type === "text" ? 13 : 12);
+    ta.style.fontSize  = Math.max(10, editFs * viewTransform.scale) + "px";
     ta.style.color     = c.text;
     ta.style.display   = "block";
     document.getElementById("shapeTextInput").style.display = "none";
     document.getElementById("textOverlay").style.display = "block";
-    // Masquer le texte SVG du postit pour éviter la double lecture
+    // Masquer le texte SVG pour éviter la double lecture
     var sg = document.querySelector('#shapesLayer [data-id="' + shapeId + '"]');
     if (sg) { var tx = sg.querySelector("text"); if (tx) tx.style.visibility = "hidden"; }
     setTimeout(function () { ta.focus(); ta.select(); }, 10);
@@ -825,7 +953,8 @@ function startTextEdit(shapeId) {
     input.style.left   = (sx + sw * 0.08) + "px";
     input.style.top    = (sy + sh * 0.22) + "px";
     input.style.width  = (sw * 0.84) + "px";
-    input.style.fontSize   = Math.max(10, 12 * viewTransform.scale) + "px";
+    var editFs2 = shape.fontSize || 13;
+    input.style.fontSize   = Math.max(10, editFs2 * viewTransform.scale) + "px";
     input.style.color      = c.text;
     input.style.display    = "block";
     document.getElementById("postitTextInput").style.display = "none";
@@ -840,7 +969,8 @@ function confirmTextEdit() {
   if (editingShapeId) {
     var shape = diag.shapes.find(function (s) { return s.id === editingShapeId; });
     if (shape) {
-      var val = shape.type === "postit"
+      var usesTextarea = shape.type === "postit" || shape.type === "rect" || shape.type === "rounded" || shape.type === "db" || shape.type === "cloud";
+      var val = usesTextarea
         ? document.getElementById("postitTextInput").value
         : input.value;
       shape.text = val;
@@ -954,6 +1084,14 @@ function onMouseDown(e) {
   if (editingShapeId || editingArrowId) { confirmTextEdit(); return; }
 
   var pt = svgPoint(e.clientX, e.clientY);
+
+  // Mode pick (copie de style)
+  if (pickMode) {
+    var srcShape = shapeAt(pt.x, pt.y);
+    if (srcShape) applyPickMode(srcShape);
+    cancelPickMode();
+    return;
+  }
 
   // Clic sur un point de connexion → début de flèche
   var connDot = e.target.closest(".conn-dot");
@@ -1277,10 +1415,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if ((e.ctrlKey || e.metaKey) && e.key === "v") {
       e.preventDefault();
-      if (!navigator.clipboard || !navigator.clipboard.read) {
+      if (clipboard.length > 0) {
         pasteShapes();
         return;
       }
+      if (!navigator.clipboard || !navigator.clipboard.read) return;
       navigator.clipboard.read().then(function (clipItems) {
         for (var i = 0; i < clipItems.length; i++) {
           for (var j = 0; j < clipItems[i].types.length; j++) {
@@ -1292,12 +1431,14 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
         }
-        // Aucune image → coller les formes
-        pasteShapes();
-      }).catch(function () {
-        pasteShapes();
-      });
+      }).catch(function () {});
     }
+  });
+
+  // Quand la fenêtre reprend le focus, l'utilisateur revient d'une autre app
+  // où il a peut-être copié une image → vider le clipboard interne
+  window.addEventListener("focus", function () {
+    clipboard = [];
   });
 
   document.getElementById("modalPremiereSauvegardeDiag").addEventListener("click", function (e) {

@@ -1386,6 +1386,18 @@ section.collapsed .links {
   color: #fff;
   border-color: #292524;
 }
+.diagram-color-font {
+  width: auto;
+  padding: 0 5px;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+.diagram-pick-active {
+  background: #f97316;
+  color: #fff;
+  border-color: #f97316;
+}
 
 /* ── Bouton diagramme dans index.html ── */
 .btn-diagram {
