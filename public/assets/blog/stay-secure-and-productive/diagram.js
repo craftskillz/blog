@@ -24,6 +24,8 @@ var lastClickTime = 0;
 var lastClickShapeId = null;
 var lastClickArrowId = null;
 var editingArrowId = null;
+var boardLocked = false;
+var diagDragSrcIdx = null;
 
 // ── Palette ──
 var COLORS = {
@@ -111,6 +113,45 @@ function checkDiffDiagrammes() {
   var stored = localStorage.getItem("mes_diagrammes");
   var diff = stored !== JSON.stringify(diagrammesDefaut);
   document.getElementById("btnSaveDiagram").style.display = diff ? "inline-flex" : "none";
+}
+
+// ── Verrouillage par diagramme ──
+var LOCK_OPEN_SVG   = '<svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="12" height="8" rx="2"/><path d="M4 7V4.5a3 3 0 0 1 6 0"/></svg>';
+var LOCK_CLOSED_SVG = '<svg width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="12" height="8" rx="2"/><path d="M4 7V5a3 3 0 0 1 6 0v2"/></svg>';
+
+function getLockMap() {
+  try { return JSON.parse(localStorage.getItem("diagrammes_lock") || "{}"); } catch(e) { return {}; }
+}
+function saveCurrentLock() {
+  var diag = diagramsList[currentDiagramIdx];
+  if (!diag) return;
+  var map = getLockMap();
+  map[diag.id] = boardLocked;
+  localStorage.setItem("diagrammes_lock", JSON.stringify(map));
+}
+function restoreLockForDiagram(idx) {
+  var diag = diagramsList[idx];
+  if (!diag) return;
+  var map = getLockMap();
+  boardLocked = map[diag.id] === true;
+}
+function toggleBoardLock() {
+  boardLocked = !boardLocked;
+  saveCurrentLock();
+  if (boardLocked) {
+    selectedId = null; selectedType = null;
+    selectedIds = [];
+    document.getElementById("colorPanel").style.display = "none";
+    renderAll();
+  }
+  updateLockBtn();
+}
+function updateLockBtn() {
+  var btn = document.getElementById("btnLock");
+  if (!btn) return;
+  btn.innerHTML = boardLocked ? LOCK_CLOSED_SVG : LOCK_OPEN_SVG;
+  btn.title = boardLocked ? "Déverrouiller le diagramme" : "Verrouiller le diagramme";
+  btn.classList.toggle("active", boardLocked);
 }
 
 // ── Zoom par diagramme ──
@@ -671,7 +712,14 @@ function renderDiagramList() {
   el.innerHTML = diagramsList.map(function (d, i) {
     var active = i === currentDiagramIdx ? " active" : "";
     return (
-      '<div class="diagram-list-item' + active + '" onclick="selectDiagramme(' + i + ')">' +
+      '<div class="diagram-list-item' + active + '" draggable="true"' +
+      ' ondragstart="onDiagDragStart(event,' + i + ')"' +
+      ' ondragover="onDiagDragOver(event,' + i + ')"' +
+      ' ondragleave="onDiagDragLeave(event)"' +
+      ' ondrop="onDiagDrop(event,' + i + ')"' +
+      ' ondragend="onDiagDragEnd()"' +
+      ' onclick="selectDiagramme(' + i + ')">' +
+      '<span class="diagram-list-grip">⠿</span>' +
       '<span class="diagram-list-name">' + escDiag(d.titre) + '</span>' +
       (diagramsList.length > 1
         ? '<button class="diagram-list-del" onclick="event.stopPropagation();supprimerDiagramme(' + i + ')">×</button>'
@@ -681,18 +729,77 @@ function renderDiagramList() {
   }).join("");
 }
 
+function onDiagDragStart(e, idx) {
+  diagDragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = "move";
+  e.currentTarget.classList.add("dragging");
+}
+
+function onDiagDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  document.querySelectorAll(".diagram-list-item").forEach(function (el) {
+    el.classList.remove("drag-over-after", "drag-over-before");
+  });
+  if (idx !== diagDragSrcIdx) {
+    var goingDown = diagDragSrcIdx < idx;
+    e.currentTarget.classList.add(goingDown ? "drag-over-after" : "drag-over-before");
+  }
+}
+
+function onDiagDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over-after", "drag-over-before");
+}
+
+function onDiagDrop(e, idx) {
+  e.preventDefault();
+  if (diagDragSrcIdx === null || diagDragSrcIdx === idx) {
+    onDiagDragEnd();
+    return;
+  }
+  var src = diagDragSrcIdx;
+  var item = diagramsList.splice(src, 1)[0];
+
+  // insertAt = idx dans les deux cas :
+  // - descente (src < idx) : après remove, la cible est à idx-1, on insère à idx = après elle ✓
+  // - montée  (src > idx) : après remove, la cible est toujours à idx, on insère à idx = avant elle ✓
+  diagramsList.splice(idx, 0, item);
+
+  var cur = currentDiagramIdx;
+  if (cur === src) {
+    currentDiagramIdx = idx;
+  } else {
+    var adjustedCur = cur > src ? cur - 1 : cur;
+    currentDiagramIdx = adjustedCur >= idx ? adjustedCur + 1 : adjustedCur;
+  }
+  localStorage.setItem("current_diagram_idx", currentDiagramIdx);
+  diagDragSrcIdx = null;
+  saveDiagrammes();
+  renderDiagramList();
+}
+
+function onDiagDragEnd() {
+  diagDragSrcIdx = null;
+  document.querySelectorAll(".diagram-list-item").forEach(function (el) {
+    el.classList.remove("dragging", "drag-over-after", "drag-over-before");
+  });
+}
+
 // ── Gestion des diagrammes ──
 function selectDiagramme(idx) {
   saveCurrentZoom();
+  saveCurrentLock();
   currentDiagramIdx = idx;
   localStorage.setItem("current_diagram_idx", idx);
   selectedId = null;  selectedType = null;
   selectedIds = [];
   restoreZoomForDiagram(idx);
+  restoreLockForDiagram(idx);
   viewTransform.x = 60;
   viewTransform.y = 60;
   document.getElementById("colorPanel").style.display = "none";
   renderAll();
+  updateLockBtn();
   document.getElementById("diagramListPanel").classList.remove("open");
 }
 
@@ -1083,6 +1190,12 @@ function onMouseDown(e) {
   if (e.button !== 0) return;
   if (editingShapeId || editingArrowId) { confirmTextEdit(); return; }
 
+  // Mode verrouillé : pan uniquement
+  if (boardLocked) {
+    panStart = { cx: e.clientX, cy: e.clientY, px: viewTransform.x, py: viewTransform.y };
+    return;
+  }
+
   var pt = svgPoint(e.clientX, e.clientY);
 
   // Mode pick (copie de style)
@@ -1347,8 +1460,10 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!isNaN(savedIdx) && savedIdx >= 0 && savedIdx < diagramsList.length) {
     currentDiagramIdx = savedIdx;
   }
+  restoreLockForDiagram(currentDiagramIdx);
   checkDiffDiagrammes();
   renderAll();
+  updateLockBtn();
 
   var canvas = document.getElementById("canvas");
   canvas.addEventListener("mousedown", onMouseDown);
@@ -1398,6 +1513,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   document.addEventListener("keydown", function (e) {
     if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
+    if (boardLocked) return;
     if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
     if (e.key === "Escape") {
       arrowSrcId = null;
