@@ -91,6 +91,12 @@
           <path d="M4 7V4.5a3 3 0 0 1 6 0"/>
         </svg>
       </button>
+      <!-- Retour au diagramme précédent -->
+      <button class="diagram-tool diagram-back-btn" id="btnDiagBack" onclick="goBackDiagram()" title="Retour au diagramme précédent" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 2 L3 7 L9 12"/>
+        </svg>
+      </button>
       <span class="diagram-sep">|</span>
 
       <!-- Titre (prend l'espace restant) -->
@@ -126,6 +132,7 @@
       <button class="color-dot t-sky"    onclick="setShapeColor('t-sky')"></button>
       <button class="color-dot t-rose"   onclick="setShapeColor('t-rose')"></button>
       <button class="color-dot t-teal"   onclick="setShapeColor('t-teal')"></button>
+      <button class="color-dot t-white"  onclick="setShapeColor('t-white')"></button>
       <span style="width:1px;background:#e7e5e4;margin:0 4px;align-self:stretch;"></span>
       <button id="btnEditText" class="diagram-color-edit" onclick="startTextEdit(selectedId)" data-i18n-title="diag_edit_text">✎</button>
       <span style="width:1px;background:#e7e5e4;margin:0 4px;align-self:stretch;"></span>
@@ -184,6 +191,40 @@
       <button class="diagram-color-edit" id="btnPickStyle" onclick="startPickMode('fullStyle')" title="Copier le style complet d'un autre composant (police + couleur)">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M7 2 Q11 6 11 9 A4 4 0 0 1 3 9 Q3 6 7 2 Z"/>
+        </svg>
+      </button>
+      <span style="width:1px;background:#e7e5e4;margin:0 4px;align-self:stretch;"></span>
+      <button class="diagram-color-edit" id="btnRotateLeft" onclick="rotateShape(-15)" title="Rotation antihoraire (−15°)">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7A4 4 0 1 0 10 3 L5 3"/>
+          <polyline points="7,1.5 5,3 7,4.5"/>
+        </svg>
+      </button>
+      <button class="diagram-color-edit" id="btnRotateRight" onclick="rotateShape(15)" title="Rotation horaire (+15°)">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 7A4 4 0 1 1 4 3 L9 3"/>
+          <polyline points="7,1.5 9,3 7,4.5"/>
+        </svg>
+      </button>
+      <span style="width:1px;background:#e7e5e4;margin:0 4px;align-self:stretch;"></span>
+      <button class="diagram-color-edit" id="btnOrderBack" onclick="changeShapeOrder(-1)" title="Reculer d'un niveau">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="5" width="8" height="8" rx="1"/>
+          <rect x="5" y="1" width="8" height="8" rx="1" stroke-opacity="0.35"/>
+        </svg>
+      </button>
+      <button class="diagram-color-edit" id="btnOrderFront" onclick="changeShapeOrder(1)" title="Avancer d'un niveau">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="5" width="8" height="8" rx="1" stroke-opacity="0.35"/>
+          <rect x="5" y="1" width="8" height="8" rx="1"/>
+        </svg>
+      </button>
+      <span style="width:1px;background:#e7e5e4;margin:0 4px;align-self:stretch;"></span>
+      <button class="diagram-color-edit" id="btnShapeLink" onclick="toggleShapeLink()" title="Lier à un diagramme enfant" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5.5 9.5H4a3 3 0 0 1 0-6h1.5"/>
+          <path d="M8.5 4.5H10a3 3 0 0 1 0 6H8.5"/>
+          <line x1="4.5" y1="7" x2="9.5" y2="7"/>
         </svg>
       </button>
     </div>
@@ -267,6 +308,11 @@
              border:1px solid #d6d3d1;border-radius:4px;background:rgba(255,255,255,0.95);
              box-shadow:0 1px 3px rgba(0,0,0,0.12);font-size:.85rem;color:#57534e;padding:0;
              align-items:center;justify-content:center;">−</button>
+
+    <!-- Panneau de sélection de lien -->
+    <div id="linkPickerPanel" style="display:none;position:fixed;z-index:300;background:#fff;border:1px solid #e7e5e4;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);min-width:180px;max-width:260px;overflow:hidden;">
+      <div id="linkPickerList" style="max-height:200px;overflow-y:auto;"></div>
+    </div>
 
     <script src="i18n/fr.js"></script>
     <script src="i18n/en.js"></script>
