@@ -42,10 +42,10 @@ Plus d'infos sur <a href="https://www.npmjs.com/package/doc-survival-kit" target
 > Cliquer sur l'image pour tester l'application directement depuis le blog
 >
 > <a href="/assets/blog/stay-secure-and-productive/index.html" target="_blank">
->   <img src="/assets/blog/stay-secure-and-productive/mon_dashboard.png" alt="Mon mini dashboard" />
+>   <img src="/assets/blog/stay-secure-and-productive/images/mon_dashboard.png" alt="Mon mini dashboard" />
 > </a>
 > <a href="/assets/blog/stay-secure-and-productive/index.html" target="_blank">
->   <img src="/assets/blog/stay-secure-and-productive/mes_diagrammes.png" alt="Mes diagrammes" />
+>   <img src="/assets/blog/stay-secure-and-productive/images/diagram-overview.jpg" alt="Mes diagrammes" />
 > </a>
 
 [^1]: Le terme « Vanilla » (JavaScript ou CSS) signifie que l'on n'utilise aucune bibliothèque tierce, uniquement les fonctionnalités natives du langage, disponibles dans tous les navigateurs.
